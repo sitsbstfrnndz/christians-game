@@ -3,45 +3,47 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>The Trip Crossword</title>
-  <meta property="og:title" content="The Trip Crossword" />
+  <title>Christian's Mini</title>
+  <link rel="icon" type="image/svg+xml" href="assets/maptap-icon.svg" />
+  <meta property="og:title" content="Christian's Mini" />
   <meta property="og:description" content="A mini crossword full of inside jokes from the trips." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --ink: #0f3d3e;
-      --sea: #e4f0ec;
-      --glass: #c3e0d8;
-      --mango: #ffc845;
-      --mango-soft: #ffe7a3;
-      --paper: #ffffff;
-      --wrong: #d1495b;
+      --ink: #e5e7eb;
+      --sea: #0b1020;
+      --glass: #18224a;
+      --mango: #3b82f6;
+      --mango-soft: #263657;
+      --paper: #121a33;
+      --wrong: #ef4444;
+      --cell-bg: #e5e7eb;
+      --cell-ink: #0b1020;
       --cols: 10;
       --cell: min(54px, calc((100vw - 32px) / var(--cols)));
     }
     * { box-sizing: border-box; }
     body {
       margin: 0; min-height: 100vh;
-      font-family: "Atkinson Hyperlegible", system-ui, sans-serif;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
       background: var(--sea); color: var(--ink);
     }
     a { color: inherit; }
     header {
       display: flex; align-items: center; justify-content: space-between; gap: 12px;
-      padding: 14px 16px; max-width: 1040px; margin: 0 auto;
+      padding: 10px 16px; max-width: none; margin: 0; flex-wrap: wrap;
+      background: var(--paper); border-bottom: 1px solid rgba(148,163,184,.16);
     }
-    .back { font-weight: 700; text-decoration: none; font-size: .95rem; }
+    .back { color: #94a3b8; font-weight: 700; text-decoration: none; font-size: .9rem; }
+    .back:hover, .back:focus-visible { color: #fff; }
     .back:hover, .back:focus-visible { text-decoration: underline; }
     h1 {
-      font-family: "Bricolage Grotesque", sans-serif; font-weight: 800;
+      font-family: inherit; font-weight: 800;
       font-size: clamp(1.3rem, 3.5vw, 1.9rem); margin: 0; letter-spacing: -.02em;
     }
     .timer { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 4ch; text-align: right; }
 
     main {
-      max-width: 1040px; margin: 0 auto; padding: 0 16px 32px;
+      max-width: 1200px; margin: 0 auto; padding: 18px 16px 32px;
       display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: start;
     }
     @media (max-width: 860px) { main { grid-template-columns: 1fr; gap: 16px; } }
@@ -49,54 +51,54 @@
     .board { display: flex; flex-direction: column; gap: 12px; align-items: center; }
     .clueBar {
       width: 100%; min-height: 54px; display: flex; align-items: center; gap: 10px;
-      background: var(--glass); border-radius: 10px; padding: 10px 12px; font-size: 1.05rem;
+      background: var(--paper); border: 1px solid rgba(148,163,184,.16); border-radius: 10px; padding: 10px 12px; font-size: 1.05rem;
     }
-    .clueBar b { font-family: "Bricolage Grotesque", sans-serif; white-space: nowrap; }
+    .clueBar b { white-space: nowrap; }
     .clueBar .nav { margin-left: auto; display: flex; gap: 4px; }
 
     #grid {
       display: grid; grid-template-columns: repeat(var(--cols), var(--cell));
-      background: var(--ink); border: 3px solid var(--ink); gap: 2px; border-radius: 6px;
+      background: #334155; border: 3px solid #334155; gap: 2px; border-radius: 8px;
       touch-action: manipulation; user-select: none;
     }
     .cell {
-      position: relative; width: var(--cell); height: var(--cell); background: var(--paper);
+      position: relative; width: var(--cell); height: var(--cell); background: var(--cell-bg); color: var(--cell-ink);
       display: flex; align-items: center; justify-content: center; cursor: pointer;
-      font-family: "Bricolage Grotesque", sans-serif; font-weight: 500;
+      font-family: inherit; font-weight: 700;
       font-size: calc(var(--cell) * .58); text-transform: uppercase;
     }
-    .cell.block { background: var(--ink); cursor: default; }
+    .cell.block { background: var(--sea); color: var(--sea); cursor: default; }
     .cell .num {
-      position: absolute; top: 2px; left: 3px; font-family: "Atkinson Hyperlegible", sans-serif;
+      position: absolute; top: 2px; left: 3px; font-family: inherit;
       font-size: calc(var(--cell) * .24); font-weight: 700; line-height: 1;
     }
-    .cell.word { background: var(--mango-soft); }
-    .cell.active { background: var(--mango); }
+    .cell.word { background: #bfdbfe; }
+    .cell.active { background: var(--mango); color: #fff; }
     .cell.wrong .ch { color: var(--wrong); }
     .cell.wrong::after {
       content: ""; position: absolute; right: 0; top: 0;
       border-left: 10px solid transparent; border-top: 10px solid var(--wrong);
     }
-    .cell.revealed .ch { color: #3a6ea5; }
+    .cell.revealed .ch { color: #2563eb; }
     .solved .cell:not(.block) { animation: wave .6s ease both; animation-delay: calc(var(--i) * 18ms); }
     @keyframes wave { 50% { transform: translateY(-5px); background: var(--mango); } }
     @media (prefers-reduced-motion: reduce) { .solved .cell:not(.block) { animation: none; } }
 
     .tools { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
     button {
-      font: inherit; font-weight: 700; color: var(--ink); background: var(--paper);
-      border: 2px solid var(--ink); border-radius: 999px; padding: 6px 14px; cursor: pointer;
+      font: inherit; font-weight: 700; color: #fff; background: var(--glass);
+      border: 1px solid rgba(148,163,184,.28); border-radius: 8px; padding: 8px 14px; cursor: pointer;
     }
-    button:hover { background: var(--glass); }
+    button:hover { background: #263657; }
     button:focus-visible, .clue:focus-visible, .back:focus-visible { outline: 3px solid var(--mango); outline-offset: 2px; }
     .nav button { padding: 2px 10px; }
 
     .clues { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
     @media (max-width: 520px) { .clues { grid-template-columns: 1fr; } }
     .clues h2 {
-      font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 1rem;
+      font-family: inherit; font-weight: 800; font-size: 1rem;
       text-transform: uppercase; letter-spacing: .08em; margin: 0 0 8px;
-      border-bottom: 2px solid var(--ink); padding-bottom: 6px;
+      border-bottom: 2px solid #334155; padding-bottom: 6px;
     }
     .clues ol { list-style: none; margin: 0; padding: 0; }
     .clue {
@@ -107,20 +109,20 @@
     .clue:hover { background: var(--glass); }
     .clue.cross { border-left-color: var(--mango); }
     .clue.current { background: var(--mango-soft); border-left-color: var(--mango); }
-    .clue.done { color: #6c8b8b; }
+    .clue.done { color: #64748b; }
 
     #kb { position: absolute; opacity: 0; width: 1px; height: 1px; left: -9999px; }
 
     #win {
       position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
-      background: rgba(15, 61, 62, .55); padding: 16px;
+      background: rgba(5, 8, 20, .78); padding: 16px;
     }
     #win.show { display: flex; }
     .winCard {
       background: var(--paper); border-radius: 16px; padding: 28px; max-width: 360px; width: 100%;
-      text-align: center; border: 3px solid var(--ink);
+      text-align: center; border: 1px solid rgba(148,163,184,.28); box-shadow: 0 18px 60px rgba(0,0,0,.45);
     }
-    .winCard h2 { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 2rem; margin: 0 0 6px; }
+    .winCard h2 { font-family: inherit; font-weight: 800; font-size: 2rem; margin: 0 0 6px; }
     .winCard p { margin: 0 0 18px; }
     .winCard .row { display: flex; gap: 8px; justify-content: center; }
   </style>
@@ -128,7 +130,7 @@
 <body>
   <header>
     <a class="back" href="./">&larr; All games</a>
-    <h1>The Trip Crossword</h1>
+    <h1>🧩 Christian's Mini</h1>
     <div class="timer" id="timer" aria-label="Time">0:00</div>
   </header>
 
@@ -181,7 +183,7 @@
     const TBD = "Clue coming soon";
     const CLUES = {
       A: {
-        ALLEN: "TC secured at ____ Gledhill",
+        ALLEN: "TC secured at ____ and Gledhill",
         BOOBS: "Price you quoted to a random seller in Vietnam",
         BOLT: "Dog from the Shack",
         AVERY: "Henry ____, famous author of Jam a Man of Fortune",
@@ -191,8 +193,8 @@
         ALPHA: "Company in 30 SCE",
         COCO: "Siquijor bar with free-flow drinks: ___ Rico",
         ARES: "Whack club we went to in Shanghai",
-        BLUE: "Trusty tri-wheeled vehicle",
-        TEA: "Gossip, or something to sip",
+        BLUE: "Trusty tri-wheeled vehicle, ___ Blue",
+        TEA: "Gossip, or something to sip (Ts basic no inside joke nw)",
         VAN: "Avid mushroom grower and lobster catcher",
       },
     };
@@ -421,7 +423,7 @@
     $("closeBtn").onclick = () => $("win").classList.remove("show");
     $("shareBtn").onclick = async () => {
       const helped = Object.keys(state.revealed).length;
-      const text = `The Trip Crossword: solved in ${fmt(state.elapsed)}${helped ? ` (${helped} revealed)` : ""}\n${location.href}`;
+      const text = `Christian's Mini: solved in ${fmt(state.elapsed)}${helped ? ` (${helped} revealed)` : ""}\n${location.href}`;
       try { await navigator.clipboard.writeText(text); $("shareBtn").textContent = "Copied"; }
       catch { prompt("Copy your result:", text); }
       setTimeout(() => ($("shareBtn").textContent = "Copy result"), 2000);
