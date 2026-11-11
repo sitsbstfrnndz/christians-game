@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TapMap Daily – Globe</title>
   <meta property="og:title" content="TapMap Daily" />
-  <meta property="og:description" content="Find 5 places on the globe every day. How close can you get?" />
+  <meta property="og:description" content="Find 6 places on the globe every day. How close can you get?" />
   <style>
     :root {
       --bg:#0b1020; --panel:#121a33; --panel2:#18224a; --accent:#3b82f6;
@@ -156,6 +156,7 @@
     }
     .slides { display: flex; height: 100%; transition: transform .45s ease; }
     .slide { min-width: 100%; height: 100%; background: #111 center/cover no-repeat; }
+    .slide video { display: block; width: 100%; height: 100%; object-fit: contain; background: #111; }
     .shimmer {
       background: linear-gradient(90deg, #141c38 25%, #1e2a52 50%, #141c38 75%) !important;
       background-size: 200% 100% !important; animation: shim 1.2s infinite;
@@ -198,7 +199,7 @@
     <div class="pips" id="pips"></div>
     <div class="stats">
       <div class="scoreBox">
-        <div class="scoreTop"><span>Round <b id="round">1</b>/5</span><span>Score <b id="score">0</b></span></div>
+        <div class="scoreTop"><span>Round <b id="round">1</b>/<b id="roundMax">6</b></span><span>Score <b id="score">0</b></span></div>
         <div class="bar"><div id="scoreBar"></div></div>
       </div>
       <div class="timer">⏱ <b id="timer">0.0</b>s</div>
@@ -220,7 +221,7 @@
 
     <div id="summary" class="hidden">
       <div class="lbl">Today's Results</div>
-      <div id="finalScore">0 <small>/ 500</small></div>
+      <div id="finalScore">0 <small>/ 600</small></div>
       <div id="rankTitle"></div>
       <div class="bar"><div id="sumBar"></div></div>
       <div class="tabs" id="tabs"></div>
@@ -246,7 +247,8 @@
 
   <script>
     // ================= CONFIG =================
-    const ROUNDS = 5;
+    const ROUNDS = 6;
+    const MAX_SCORE = ROUNDS * 100;
     const SMALL_C = 169.65;
     const TEX = "https://unpkg.com/three-globe/example/img/";
     const SHARE_URL = "";   // e.g. "https://YOUR-USERNAME.github.io/tapmap-daily/"
@@ -277,13 +279,83 @@
 
     const GLOBE_LIB_URLS = ["https://cdn.jsdelivr.net/npm/globe.gl", "https://unpkg.com/globe.gl"];
 
-    // Optional per-location fields: wiki (article title), blurb ([...paragraphs]), images ([...urls])
+    // Optional per-location fields: wiki (article title), blurb ([...paragraphs]), images ([{src, type, local}])
     const LOCATIONS = [
-      { name: "Istanbul, Turkey", lat: 41.02101409044737, lng: 28.973419063543435 }, 
-      { name: "Jurong Camp 1, Singapore", lat: 1.335685, lng: 103.690054 },  
-      { name: "South Horizons,Hong Kong", lat: 22.24481039827112, lng: 114.14629880869226 },
-      { name: "The Shack Cebu, Philippines", lat: 9.414623923370808, lng: 123.32032762394373 },
-      { name: "Lemon Hotel Shanghai, China", lat: 31.223018994332907, lng: 121.4670956900544 }
+      {
+        name: "Istanbul, Turkey", lat: 41.02101409044737, lng: 28.973419063543435,
+        images: [
+          { src: "assets/locations/istanbul-turkey/photo-01.jpg", local: true },
+          { src: "assets/locations/istanbul-turkey/clip-01.gif", local: true },
+          { src: "assets/locations/istanbul-turkey/photo-02.jpg", local: true },
+          { src: "assets/locations/istanbul-turkey/clip-02.gif", local: true },
+          { src: "assets/locations/istanbul-turkey/photo-03.jpg", local: true },
+          { src: "assets/locations/istanbul-turkey/photo-04.jpg", local: true }
+        ]
+      },
+      {
+        name: "Jurong Camp 1, Singapore", lat: 1.335685, lng: 103.690054,
+        images: [
+          { src: "assets/locations/jurong-camp-1-singapore/photo-01.jpg", local: true },
+          { src: "assets/locations/jurong-camp-1-singapore/photo-02.jpg", local: true },
+          { src: "assets/locations/jurong-camp-1-singapore/photo-03.jpg", local: true },
+          { src: "assets/locations/jurong-camp-1-singapore/photo-04.jpg", local: true },
+          { src: "assets/locations/jurong-camp-1-singapore/photo-05.jpg", local: true },
+          { src: "assets/locations/jurong-camp-1-singapore/photo-06.jpg", local: true },
+          { src: "assets/locations/jurong-camp-1-singapore/clip-01.gif", local: true }
+        ]
+      },
+      {
+        name: "South Horizons,Hong Kong", lat: 22.24481039827112, lng: 114.14629880869226,
+        blurb: [
+          "Chris spent part of his childhood in Hong Kong, from 2006 to 2012. During a visit back, standing outside the 41st-floor apartment where he grew up brought back a small memory—and a renewed appreciation for the sacrifices his parents made so he and his brother could look back on those years with warmth.",
+          "One evening, his mother brought home two pieces of a special mochi she had seen in town. After a simple dinner, the family cut each piece into quarters and shared them. As a child, Chris wondered why they couldn’t each have one. With time, he understood the love and care behind that small moment.",
+          "That understanding is something he carries forward: gratitude for where he came from and motivation to build a future that honors the people who helped him get there.",
+          "Here’s to a year of growth, new memories, and all the good still ahead."
+        ],
+        images: [
+          { src: "assets/locations/south-horizons-hong-kong/photo-01.jpg", local: true },
+          { src: "assets/locations/south-horizons-hong-kong/photo-02.jpg", local: true },
+          { src: "assets/locations/south-horizons-hong-kong/photo-03.jpg", local: true },
+          { src: "assets/locations/south-horizons-hong-kong/photo-04.jpg", local: true }
+        ]
+      },
+      {
+        name: "The Shack Cebu, Philippines", lat: 9.414623923370808, lng: 123.32032762394373,
+        blurb: [
+          "Day 4 in Siquijor turned into a string of detours. Lugawasan Falls was drained, and Cambugahay Falls and Salagdoong Beach had closed by the time Chris and his friends arrived. A local pointed them to Tubig Tubog instead: a hidden, nearly abandoned spring with striking brutalist architecture and cold, refreshing water. They stayed for an hour and called it a 10/10.",
+          "Then Bonnie Blue, their blue tuk-tuk, became an F1 car: forest roads, a green bus as the safety car, a wrong pit stop, and even a push to get it moving again. At Pitogo Cliff, a closed gate opened for them and the sunset lit the sky pink, orange, red, and purple.",
+          "Dinner at CocoRico turned into cocktails and dancing on the sand. When every KTV was closed, the crew sang karaoke in Bonnie Blue for half an hour. A day of wrong turns ended with one of the trip’s most memorable nights."
+        ],
+        images: [
+          { src: "assets/locations/the-shack-cebu-philippines/photo-01.jpg", local: true },
+          { src: "assets/locations/the-shack-cebu-philippines/clip-01.gif", local: true },
+          { src: "assets/locations/the-shack-cebu-philippines/photo-02.jpg", local: true },
+          { src: "assets/locations/the-shack-cebu-philippines/photo-03.jpg", local: true },
+          { src: "assets/locations/the-shack-cebu-philippines/clip-02.gif", local: true },
+          { src: "assets/locations/the-shack-cebu-philippines/clip-03.gif", local: true }
+        ]
+      },
+      {
+        name: "Lemon Hotel Shanghai, China", lat: 31.223018994332907, lng: 121.4670956900544,
+        images: [
+          { src: "assets/locations/lemon-hotel-shanghai-china/photo-01.jpg", local: true },
+          { src: "assets/locations/lemon-hotel-shanghai-china/photo-02.jpg", local: true },
+          { src: "assets/locations/lemon-hotel-shanghai-china/photo-03.jpg", local: true },
+          { src: "assets/locations/lemon-hotel-shanghai-china/clip-01.gif", local: true },
+          { src: "assets/locations/lemon-hotel-shanghai-china/photo-04.jpg", local: true },
+          { src: "assets/locations/lemon-hotel-shanghai-china/photo-05.jpg", local: true },
+          { src: "assets/locations/lemon-hotel-shanghai-china/photo-06.jpg", local: true }
+        ]
+      },
+      {
+        // Phuket Town is the representative pin for the broader Phuket location.
+        name: "Phuket, Thailand", lat: 7.8848, lng: 98.3892,
+        images: [
+          { src: "assets/locations/phuket-thailand/photo-01.jpg", local: true },
+          { src: "assets/locations/phuket-thailand/photo-02.jpg", local: true },
+          { src: "assets/locations/phuket-thailand/photo-03.jpg", local: true }
+        ]
+      }
     ];
 
     // ================= HELPERS =================
@@ -331,10 +403,10 @@
       return            { label: "Way off",   color: "#ef4444", emoji: "🟥" };
     }
     function rankFor(total) {
-      if (total >= 450) return "🌟 Globetrotter";
-      if (total >= 350) return "🧭 Navigator";
-      if (total >= 250) return "🗺️ Explorer";
-      if (total >= 150) return "🎒 Tourist";
+      if (total >= MAX_SCORE * 0.9) return "🌟 Globetrotter";
+      if (total >= MAX_SCORE * 0.7) return "🧭 Navigator";
+      if (total >= MAX_SCORE * 0.5) return "🗺️ Explorer";
+      if (total >= MAX_SCORE * 0.3) return "🎒 Tourist";
       return "🐣 Rookie";
     }
     function animateNumber(el, from, to, ms = 800, suffix = "") {
@@ -480,6 +552,7 @@
     // ================= DOM =================
     const $ = id => document.getElementById(id);
     const roundEl = $("round"), scoreEl = $("score"), timerEl = $("timer");
+    $("roundMax").textContent = ROUNDS;
     const promptEl = $("prompt"), nextBtn = $("nextBtn"), wrap = $("globeWrap");
     const ringFill = $("ringFill"), ringText = $("roundPoints");
     const ratingEl = $("ratingText"), distanceEl = $("distanceText");
@@ -531,7 +604,7 @@
 
     // ================= STATE =================
     const DATE = todayKey();
-    const STORAGE_KEY = "tapmap-" + DATE;
+    const STORAGE_KEY = "tapmap-v2-" + DATE;
     const targets = pickDaily(DATE);
     let roundIdx = 0, total = 0, guessed = false, startTime = 0, timerId = null;
     let globe = null, resultsMode = false, resultsData = null, resumeTimer = null;
@@ -683,7 +756,7 @@
     function buildShareText(data) {
       const emojis = data.results.map(r => rating(r.points).emoji).join("");
       const totalTime = data.results.reduce((s, r) => s + (r.time || 0), 0).toFixed(1);
-      return `🌍 TapMap Daily ${DATE}\n${emojis}\nScore: ${data.total}/500 · ${rankFor(data.total)}\n⏱ ${totalTime}s` +
+      return `🌍 TapMap Daily ${DATE}\n${emojis}\nScore: ${data.total}/${MAX_SCORE} · ${rankFor(data.total)}\n⏱ ${totalTime}s` +
         (SHARE_URL ? `\n${SHARE_URL}` : "");
     }
 
@@ -702,15 +775,21 @@
     }
     async function loadStory(loc) {
       const t = encodeURIComponent(loc.wiki || loc.name.split(",")[0]);
+      const hasCustomImages = !!loc.images?.length;
       const story = {
         paragraphs: loc.blurb ? [...loc.blurb] : [],
-        images: (loc.images || []).map(src => ({ src, page: src })),
+        images: (loc.images || []).map(im => typeof im === "string" ? { src: im, page: im } : { ...im }),
         url: `https://en.wikipedia.org/wiki/${t}`,
         fromWiki: !loc.blurb
       };
       let leadFile = "";
+      const wikiProps = [];
+      if (!story.paragraphs.length) wikiProps.push("extracts");
+      if (!hasCustomImages) wikiProps.push("pageimages");
       try {
-        const j = await wikiGet(`action=query&prop=extracts|pageimages&explaintext=1&piprop=thumbnail|name&pithumbsize=1000&titles=${t}`);
+        if (!wikiProps.length) return story;
+        const pageImageParams = hasCustomImages ? "" : "&piprop=thumbnail|name&pithumbsize=1000";
+        const j = await wikiGet(`action=query&prop=${wikiProps.join("|")}&explaintext=1${pageImageParams}&titles=${t}`);
         const page = j.query.pages[0];
         if (!story.paragraphs.length && page.extract) {
           story.paragraphs = page.extract.split("\n")
@@ -718,13 +797,13 @@
             .filter(s => s.length > 80 && !s.startsWith("="))
             .slice(0, STORY_PARAGRAPHS);
         }
-        if (page.thumbnail && story.images.length < STORY_IMAGES) {
+        if (!hasCustomImages && page.thumbnail && story.images.length < STORY_IMAGES) {
           story.images.push({ src: page.thumbnail.source, page: story.url });
           leadFile = (page.pageimage || "").replace(/ /g, "_");
         }
       } catch (e) { console.warn("Wikipedia text failed", e); }
 
-      if (story.images.length < STORY_IMAGES) {
+      if (!hasCustomImages && story.images.length < STORY_IMAGES) {
         try {
           const j = await wikiGet(`action=query&generator=images&gimlimit=60&prop=imageinfo&iiprop=url&iiurlwidth=1000&titles=${t}`);
           const files = (j.query?.pages || []).filter(p =>
@@ -770,7 +849,18 @@
           list.forEach((im, k) => {
             const s = document.createElement("div");
             s.className = "slide" + (im ? "" : (loading ? " shimmer" : ""));
-            if (im) s.style.backgroundImage = `url("${im.src}")`;
+            if (im && (im.type === "video" || /\.(mp4|m4v|webm|mov)(?:[?#]|$)/i.test(im.src))) {
+              const video = document.createElement("video");
+              video.src = im.src;
+              video.controls = true;
+              video.playsInline = true;
+              video.preload = "metadata";
+              video.setAttribute("aria-label", `Location video ${k + 1}`);
+              video.addEventListener("play", () => clearInterval(timer));
+              video.addEventListener("pause", restart);
+              video.addEventListener("ended", restart);
+              s.appendChild(video);
+            } else if (im) s.style.backgroundImage = `url("${im.src}")`;
             slides.appendChild(s);
             const d = document.createElement("div");
             d.className = "dot";
@@ -814,9 +904,9 @@
       document.body.classList.add("results");
       updateFlat();
       summaryEl.classList.remove("hidden");
-      animateNumber($("finalScore"), 0, data.total, 1200, " <small>/ 500</small>");
+      animateNumber($("finalScore"), 0, data.total, 1200, ` <small>/ ${MAX_SCORE}</small>`);
       $("rankTitle").textContent = rankFor(data.total);
-      setTimeout(() => ($("sumBar").style.width = (data.total / 500) * 100 + "%"), 60);
+      setTimeout(() => ($("sumBar").style.width = (data.total / MAX_SCORE) * 100 + "%"), 60);
 
       tabsEl.innerHTML = "";
       data.results.forEach((r, i) => {
@@ -830,7 +920,7 @@
       });
 
       scoreEl.textContent = data.total;
-      $("scoreBar").style.width = (data.total / 500) * 100 + "%";
+      $("scoreBar").style.width = (data.total / MAX_SCORE) * 100 + "%";
       roundEl.textContent = ROUNDS;
       updatePips(data.results, -1);
       promptEl.textContent = "✅ Done for today! Drag the globe to spin the stories";
@@ -908,8 +998,9 @@
       const parts = [];
       if (story.fromWiki && story.paragraphs.length)
         parts.push(`Text: <a href="${story.url}" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA 4.0)`);
-      if (story.images.length)
-        parts.push(`Photos: ${story.images.map((im, k) => `<a href="${im.page}" target="_blank" rel="noopener">${k + 1}</a>`).join(" ")}`);
+      const creditedImages = story.images.filter(im => im.page && !im.local);
+      if (creditedImages.length)
+        parts.push(`Photos: ${creditedImages.map((im, k) => `<a href="${im.page}" target="_blank" rel="noopener">${k + 1}</a>`).join(" ")}`);
       credit.innerHTML = parts.join(" · ");
       it.el.querySelector(".sText").replaceChildren(...nodes, credit);
       it.car.set(story.images, false);
@@ -919,7 +1010,10 @@
     function focusStory(i, ms = 1000) {
       const it = ringItems.find(s => s.i === i);
       if (!it || !globe) return;
-      ringItems.forEach(s => s.el.classList.toggle("active", s.i === i));
+      ringItems.forEach(s => {
+        s.el.classList.toggle("active", s.i === i);
+        if (s.i !== i) s.el.querySelectorAll("video").forEach(video => video.pause());
+      });
       [...tabsEl.children].forEach((t, j) => t.classList.toggle("active", j === i));
       setAutoRotate(false);
       clearTimeout(resumeTimer);
