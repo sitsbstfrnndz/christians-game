@@ -151,7 +151,7 @@
     .credit a { color: #93c5fd; }
 
     .carousel {
-      position: relative; aspect-ratio: 4 / 3; height: auto; border-radius: 12px; overflow: hidden; margin-bottom: 10px;
+      position: relative; aspect-ratio: 1 / 1; height: auto; border-radius: 12px; overflow: hidden; margin-bottom: 10px;
       box-shadow: 0 12px 34px rgba(0,0,0,.65);
     }
     .slides { display: flex; height: 100%; transition: transform .45s ease; }
@@ -284,7 +284,7 @@
       {
         name: "Istanbul, Turkey", lat: 41.02101409044737, lng: 28.973419063543435,
         blurb: [
-          "Man this trip was mad fun, playing contact, going fishing eating hella good food",
+          "Istanbul, Turkey. Man this trip was mad fun, playing contact, going fishing eating hella good food",
           "My favourite memory of this has to the hamman man, that shit got me fuckin crying while we were straight up but ass naked throwing hot water at each other and sliding accross the marble table.",
           "After wards getting rubbed down by that unc and the skinny dude was funny as hell, then proceeded to get abosulety covered by bubbles and violated by the unc with the nipple twist jump-scare",
           "But fuck that $60 Basilica Cistern experience, though. Still, here’s to more trips, manneee, I can’t wait for us to get our money up, travel the world, and do more crazy shit like this. (Tun cha cha tun cha next? 🇧🇷)"
@@ -301,9 +301,10 @@
       {
         name: "Jurong Camp 1, Singapore", lat: 1.335685, lng: 103.690054,
         blurb: [
-          "For me (seb) this was when I first met Christian, oh boy who would've thought where we'd go through, I was a sergeant in Alpha company with Dylan, Zac, Briant and mr aura himself Miguel Williams",
+          "Jurong Camp 1, Singapore. For me (Sebastian) this was when I first met Christian, oh boy who would've thought where we'd go through, I was a sergeant in Alpha company with Dylan, Zac, Briant and mr aura himself Miguel Williams",
           "For alot of people, they hated NS but this part of my life in unit was one of the most memorable years of my life, I so grateful to work with you in our platoon",
           "I still remember that one outfield. Del and I took a wrong turn and ended up right behind an enemy tank. All three of us were barely awake, but you pulled through witht he revive and the next day, we were cooking gourmet meals and taking down enemy tanks.",
+          "Here's an actual snippet of one of my journal entries: AFTERWARDS WE WENT BACK AND I ORDERED HOT POT FOR DINNER with Keane, Zhi Quan, Christian, Miguel, De En, Jing Kiat, Briant, Dylan, Zac. Which was absolutely scrumpdidilydtious. Also damn vibes this Squad.  Dylan was dared to eat the dirt on the mushroom (peat moss) for like 7.50 absolutely disgusting. Then mans couldn’t swallow fats enough so Zhi Quan made another bet to eat Dylan’s chewed up Enoki mushroom for $30  WORTH BUT SO DISGUSTING. Also Jing Heng came in the door fucking furious because I dropped a shimeji mushroom in the sink, mans was swearing left and right then left. Afterwards while we were washing everything, Christian fucking put the mushroom on Jing Heng’s Pillow while he was knocked out and it was so fucking hilarious for no fucking reason everyone was dying LMAO.",
           "Even in the quite and stressful times, like during our manning period, where we would just play crossword NYT minis with dylan trying to get sub 1-minute but we kept coming up with the dumbest answers, shit was still mad fun tho"
         ],
         images: [
@@ -571,8 +572,25 @@
       };
     })();
 
+    // Background music
+    const MUSIC_VOLUME = 0.24;
+    const backgroundMusic = new Audio("assets/audio/i-wonder.mp3");
+    backgroundMusic.loop = true;
+    backgroundMusic.volume = MUSIC_VOLUME;
+    backgroundMusic.preload = "auto";
+    const MUSIC = {
+      start() {
+        if (SFX.isMuted()) return;
+        backgroundMusic.play().catch(() => {});
+      },
+      setMuted(muted) {
+        if (muted) backgroundMusic.pause();
+        else this.start();
+      }
+    };
+
     // Browsers only allow audio after the first click or tap
-    document.addEventListener("pointerdown", () => SFX.unlock(), { once: true });
+    document.addEventListener("pointerdown", () => { SFX.unlock(); MUSIC.start(); }, { once: true });
 
     // ================= DOM =================
     const $ = id => document.getElementById(id);
@@ -589,9 +607,20 @@
     // Mute button and the M key
     const refreshMute = () => { muteBtn.textContent = SFX.isMuted() ? "🔇" : "🔊"; };
     refreshMute();
-    muteBtn.addEventListener("click", e => { SFX.setMuted(!SFX.isMuted()); refreshMute(); e.currentTarget.blur(); });
+    muteBtn.addEventListener("click", e => {
+      const muted = !SFX.isMuted();
+      SFX.setMuted(muted);
+      MUSIC.setMuted(muted);
+      refreshMute();
+      e.currentTarget.blur();
+    });
     document.addEventListener("keydown", e => {
-      if (e.key === "m" || e.key === "M") { SFX.setMuted(!SFX.isMuted()); refreshMute(); }
+      if (e.key === "m" || e.key === "M") {
+        const muted = !SFX.isMuted();
+        SFX.setMuted(muted);
+        MUSIC.setMuted(muted);
+        refreshMute();
+      }
     });
 
     for (let i = 0; i < ROUNDS; i++) {
