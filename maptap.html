@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TapMap Daily – Globe</title>
-  <meta property="og:title" content="TapMap Daily" />
+  <title>Christian's MapTap</title>
+  <link rel="icon" type="image/svg+xml" href="assets/maptap-icon.svg" />
+  <meta property="og:title" content="Christian's MapTap" />
   <meta property="og:description" content="Find 6 places on the globe every day. How close can you get?" />
   <style>
     :root {
@@ -201,7 +202,7 @@
 <body>
   <header>
     <a class="back" href="./">&larr; All games</a>
-    <h1>🌍 TapMap Daily</h1>
+    <h1>🌍 Christian's MapTap</h1>
     <div class="pips" id="pips"></div>
     <div class="stats">
       <div class="scoreBox">
@@ -1032,7 +1033,7 @@
       $("scoreBar").style.width = (data.total / MAX_SCORE) * 100 + "%";
       roundEl.textContent = ROUNDS;
       updatePips(data.results, -1);
-      promptEl.textContent = "✅ Done for today! Drag the globe to spin the stories";
+      promptEl.innerHTML = "🎉 Happy birthday Christian!<br><small>Love your brothers, Sebastian &amp; Sri</small>";
 
       buildRing(data);
     }
