@@ -151,7 +151,7 @@
     .credit a { color: #93c5fd; }
 
     .carousel {
-      position: relative; height: 140px; border-radius: 12px; overflow: hidden; margin-bottom: 10px;
+      position: relative; aspect-ratio: 4 / 3; height: auto; border-radius: 12px; overflow: hidden; margin-bottom: 10px;
       box-shadow: 0 12px 34px rgba(0,0,0,.65);
     }
     .slides { display: flex; height: 100%; transition: transform .45s ease; }
@@ -182,7 +182,7 @@
       position: static; width: 100%; margin-bottom: 28px;
       transform: none !important; opacity: 1 !important; pointer-events: auto !important;
     }
-    body.flat .carousel { height: 150px; }
+    body.flat .carousel { height: auto; }
     body.flat .sText { max-height: none; overflow: visible; -webkit-mask-image: none; mask-image: none; }
 
     @media (max-width: 800px) {
@@ -283,6 +283,12 @@
     const LOCATIONS = [
       {
         name: "Istanbul, Turkey", lat: 41.02101409044737, lng: 28.973419063543435,
+        blurb: [
+          "Man this trip was mad fun, playing contact, going fishing eating hella good food",
+          "My favourite memory of this has to the hamman man, that shit got me fuckin crying while we were straight up but ass naked throwing hot water at each other and sliding accross the marble table.",
+          "After wards getting rubbed down by that unc and the skinny dude was funny as hell, then proceeded to get abosulety covered by bubbles and violated by the unc with the nipple twist jump-scare",
+          "But fuck that $60 Basilica Cistern experience, though. Still, here’s to more trips, manneee, I can’t wait for us to get our money up, travel the world, and do more crazy shit like this. (Tun cha cha tun cha next? 🇧🇷)"
+        ],
         images: [
           { src: "assets/locations/istanbul-turkey/photo-01.jpg", local: true },
           { src: "assets/locations/istanbul-turkey/clip-01.gif", local: true },
@@ -294,6 +300,12 @@
       },
       {
         name: "Jurong Camp 1, Singapore", lat: 1.335685, lng: 103.690054,
+        blurb: [
+          "For me (seb) this was when I first met Christian, oh boy who would've thought where we'd go through, I was a sergeant in Alpha company with Dylan, Zac, Briant and mr aura himself Miguel Williams",
+          "For alot of people, they hated NS but this part of my life in unit was one of the most memorable years of my life, I so grateful to work with you in our platoon",
+          "I still remember that one outfield. Del and I took a wrong turn and ended up right behind an enemy tank. All three of us were barely awake, but you pulled through witht he revive and the next day, we were cooking gourmet meals and taking down enemy tanks.",
+          "Even in the quite and stressful times, like during our manning period, where we would just play crossword NYT minis with dylan trying to get sub 1-minute but we kept coming up with the dumbest answers, shit was still mad fun tho"
+        ],
         images: [
           { src: "assets/locations/jurong-camp-1-singapore/photo-01.jpg", local: true },
           { src: "assets/locations/jurong-camp-1-singapore/photo-02.jpg", local: true },
@@ -310,7 +322,7 @@
           "Chris spent part of his childhood in Hong Kong, from 2006 to 2012. During a visit back, standing outside the 41st-floor apartment where he grew up brought back a small memory—and a renewed appreciation for the sacrifices his parents made so he and his brother could look back on those years with warmth.",
           "One evening, his mother brought home two pieces of a special mochi she had seen in town. After a simple dinner, the family cut each piece into quarters and shared them. As a child, Chris wondered why they couldn’t each have one. With time, he understood the love and care behind that small moment.",
           "That understanding is something he carries forward: gratitude for where he came from and motivation to build a future that honors the people who helped him get there.",
-          "Here’s to a year of growth, new memories, and all the good still ahead."
+          "Proud of how far you've come and where you're going dude, the work you put in is insane, only way is up"
         ],
         images: [
           { src: "assets/locations/south-horizons-hong-kong/photo-01.jpg", local: true },
@@ -322,9 +334,11 @@
       {
         name: "The Shack Cebu, Philippines", lat: 9.414623923370808, lng: 123.32032762394373,
         blurb: [
-          "Day 4 in Siquijor turned into a string of detours. Lugawasan Falls was drained, and Cambugahay Falls and Salagdoong Beach had closed by the time Chris and his friends arrived. A local pointed them to Tubig Tubog instead: a hidden, nearly abandoned spring with striking brutalist architecture and cold, refreshing water. They stayed for an hour and called it a 10/10.",
-          "Then Bonnie Blue, their blue tuk-tuk, became an F1 car: forest roads, a green bus as the safety car, a wrong pit stop, and even a push to get it moving again. At Pitogo Cliff, a closed gate opened for them and the sunset lit the sky pink, orange, red, and purple.",
-          "Dinner at CocoRico turned into cocktails and dancing on the sand. When every KTV was closed, the crew sang karaoke in Bonnie Blue for half an hour. A day of wrong turns ended with one of the trip’s most memorable nights."
+          "Day 4 Cebu, We eventually drove back, Seb was speeding through the forests, Sri and Chris were stressed asf. Eventually Sri took over again and we were helping him smoke, snack and drive.",
+          "3 second gap to Leclerc and we turned on DRS and overtook him, eventually bro overtook us on the hills. We chased his ass down until there yellow flag and safety car (green bus). We were now 0.5 seconds before Leclerc (red sedan) we entered the chicane and we had to perform a leaning DRS strategy to hit the Maggots and Beckets. We overtook not only Leclerc but also Fernando’s Aston Martin (Green Jeepney with like 10 people inside) Chris hit the most devious flightreacts emote. This was all happening as the sunset was peaking in the ski, we box boxed and pitted for soft tires but we went to the wrong pit stop and we had to push Bonnie Blue.",
+          "We ended up Pitogo Cliff and ran through the drive through as the sun lit up the sky, craziest sunset we’ve ever seen ong. The Unc and aunt told us that the place was closed but let us in either way, this shit was magnificent it was pink, orange, red and purple. One dude was aura farming like mad over the cliff.",
+          "CocoRico arc: told us the food would take an hour, came in like 30 minutes.Got the pork slider 10/10, sizzling ham as 7.5/10, honey chicken was mid, teriyaki chicken with hot honey buss. Hanna’s with the rice slapped maybe cause we were 6 drinks in. At 7:00-7:30 they had unlimited drinks, we initially thought it was just 1 drink, we had 5 rounds after a cocktail each. We discovered our new favourite mix, vodka pineapple. We ran out of money so Chris and Sri had to do a detour to the Airbnb to get more cash. At 8pm they gave free shots, the bartender stood on the bar and poured alcohol into our mouths, we did it twice. This night went absolutely crazy, mind you this was an expensive beachside restaurant with couples, we were hitting crazy ass moves on the sand dance floor, throwing the pizza crust into the ocean. Seb almost fell before doing a cartwheel. seb and Chris has to hit a Tactical Chunder (TC), seb’s TC had crazy recoil. Then we headed out to look for KTV, unfortunately all the stores were closed… But we said fuck it and hopped on Bonnie Blue singing karaoke for 30 minutes, unbelievable experience. We even sped past some cops and seb proceeded to drop his phone while signing some kanye west.",
+          "Just goes to show no matter the situation my boy Chris can make light of anything and have a good ass time."
         ],
         images: [
           { src: "assets/locations/the-shack-cebu-philippines/photo-01.jpg", local: true },
@@ -337,6 +351,12 @@
       },
       {
         name: "Lemon Hotel Shanghai, China", lat: 31.223018994332907, lng: 121.4670956900544,
+        blurb: [
+          "The week you came over is the week I remember the most from my time in Shanghai. Man your trip came at a great time; I was lowkey kinda missing SG after almost 2 months in Shanghai, and you had your personal stuffs too. I remember sitting at the super snazzy jazz bar and talking about your breakup, and after that we just popped off.",
+          "Pants building in Suzhou, ice hockey with Asher (“BLACK!”), Thai hotpot, sprinting onto the boat in Shanghai, watching euros and cycling around as the city woke up, getting scolded for being too noisy at the lemon hotel, INS oh my days, Ares oh so bad HAHA",
+          "I really appreciated all the chats we had as we went thru our days there, talking about your life, talking about my dating interests (HAHA well well what a time that was), and all that. I think I haven’t experienced as much in life, but I learn a lot from and am grateful for it.",
+          "We gotta run back Shanghai again, china really number 1"
+        ],
         images: [
           { src: "assets/locations/lemon-hotel-shanghai-china/photo-01.jpg", local: true },
           { src: "assets/locations/lemon-hotel-shanghai-china/photo-02.jpg", local: true },
@@ -350,6 +370,11 @@
       {
         // Phuket Town is the representative pin for the broader Phuket location.
         name: "Phuket, Thailand", lat: 7.8848, lng: 98.3892,
+        blurb: [
+          "First trip overseas, too degenerate. Started with sprinting to our airport gate in SG, ended with flushing monkey shoulder down the toilet cos sumeow decided to ask for a fragile sticker. I think this trip was too much fun, highlights from the top of my head are our point system right from the start (remember all the hidden Bacardis), weijian puking right after we reached Bangla street, chugging soju beer and soy milk all alike. Samuel singing is formal one of the funniest things in my life still, and the way we switched out of our degenerate ways for John grey on the last day and cooking some good crab instant noodles and sitting around and yapping.",
+          "That night was crazy from start to end, legit can remember it play by play. We call it “LAUNDRY DAY” fml that was a fever dream. And now that I think abt it, I keep forgetting that sumeow had his own STD scare on the side LOL. yknow sometimes I wonder how that could’ve been so cooked for us but hey now it’s just lore HAHA",
+          "So glad we did that, set the stage for all our trips since. Don’t wanna go back to the days of counting our cash bit by bit anymore, let’s get breaded"
+        ],
         images: [
           { src: "assets/locations/phuket-thailand/photo-01.jpg", local: true },
           { src: "assets/locations/phuket-thailand/photo-02.jpg", local: true },
