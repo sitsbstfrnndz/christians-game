@@ -44,6 +44,14 @@
     .bar > div { height: 100%; width: 0; background: linear-gradient(90deg, #3b82f6, #22c55e); transition: width .9s ease; }
     .timer { font-variant-numeric: tabular-nums; }
     #prompt { text-align: center; padding: 10px; font-size: 1.2rem; background: var(--panel2); font-weight: 600; }
+    #prompt.birthday {
+      width: min(640px, calc(100% - 28px)); margin: 12px auto; padding: 14px 20px;
+      border: 1px solid rgba(255,255,255,.28); border-radius: 16px;
+      background: linear-gradient(115deg, #6d28d9, #db2777 58%, #f59e0b);
+      box-shadow: 0 10px 32px rgba(219,39,119,.3); color: #fff;
+    }
+    #prompt.birthday .birthday-title { font-size: clamp(1.2rem, 3vw, 1.65rem); font-weight: 900; line-height: 1.2; }
+    #prompt.birthday .birthday-subtitle { margin-top: 4px; font-size: .95rem; font-weight: 650; color: #fff7ed; }
 
     /* ---------- Globe ---------- */
     #globeWrap { position: relative; flex: 1; overflow: hidden; }
@@ -110,12 +118,6 @@
     #finalScore { font-size: 2rem; font-weight: 900; line-height: 1.1; }
     #finalScore small { font-size: .85rem; font-weight: 500; color: var(--muted); }
     #rankTitle { font-weight: 800; margin: 2px 0 6px; }
-    #birthdayMessage {
-      margin: 10px 0; padding: 10px; border-radius: 10px; text-align: center;
-      color: #fff; font-weight: 900; line-height: 1.35;
-      background: linear-gradient(135deg, rgba(236,72,153,.28), rgba(139,92,246,.3));
-    }
-    #birthdayMessage span { color: #fbcfe8; font-size: .82rem; font-weight: 700; }
     .tabs { display: flex; gap: 5px; margin: 10px 0; }
     .tab {
       flex: 1; padding: 5px 0; border-radius: 8px; font-size: .72rem; font-weight: 800;
@@ -230,7 +232,6 @@
       <div class="lbl">Today's Results</div>
       <div id="finalScore">0 <small>/ 600</small></div>
       <div id="rankTitle"></div>
-      <div id="birthdayMessage">🎉 Happy birthday Christian!<br><span>Love your brothers, Sebastian &amp; Sri</span></div>
       <div class="bar"><div id="sumBar"></div></div>
       <div class="tabs" id="tabs"></div>
       <button id="copyBtn">📋 Copy Results</button>
@@ -346,7 +347,7 @@
           "Day 4 Cebu, We eventually drove back, Seb was speeding through the forests, Sri and Chris were stressed asf. Eventually Sri took over again and we were helping him smoke, snack and drive.",
           "3 second gap to Leclerc and we turned on DRS and overtook him, eventually bro overtook us on the hills. We chased his ass down until there yellow flag and safety car (green bus). We were now 0.5 seconds before Leclerc (red sedan) we entered the chicane and we had to perform a leaning DRS strategy to hit the Maggots and Beckets. We overtook not only Leclerc but also Fernando’s Aston Martin (Green Jeepney with like 10 people inside) Chris hit the most devious flightreacts emote. This was all happening as the sunset was peaking in the ski, we box boxed and pitted for soft tires but we went to the wrong pit stop and we had to push Bonnie Blue.",
           "We ended up Pitogo Cliff and ran through the drive through as the sun lit up the sky, craziest sunset we’ve ever seen ong. The Unc and aunt told us that the place was closed but let us in either way, this shit was magnificent it was pink, orange, red and purple. One dude was aura farming like mad over the cliff.",
-          "CocoRico arc: told us the food would take an hour, came in like 30 minutes.Got the pork slider 10/10, sizzling ham as 7.5/10, honey chicken was mid, teriyaki chicken with hot honey buss. Hanna’s with the rice slapped maybe cause we were 6 drinks in. At 7:00-7:30 they had unlimited drinks, we initially thought it was just 1 drink, we had 5 rounds after a cocktail each. We discovered our new favourite mix, vodka pineapple. We ran out of money so Chris and Sri had to do a detour to the Airbnb to get more cash. At 8pm they gave free shots, the bartender stood on the bar and poured alcohol into our mouths, we did it twice. This night went absolutely crazy, mind you this was an expensive beachside restaurant with couples, we were hitting crazy ass moves on the sand dance floor, throwing the pizza crust into the ocean. Seb almost fell before doing a cartwheel. seb and Chris has to hit a Tactical Chunder (TC), seb’s TC had crazy recoil. Then we headed out to look for KTV, unfortunately all the stores were closed… But we said fuck it and hopped on Bonnie Blue singing karaoke for 30 minutes, unbelievable experience. We even sped past some cops and seb proceeded to drop his phone while signing some kanye west.",
+          "CocoRico arc: We pulled up after sunset . Pizzas and sliders, food was in flow state. Gambas with the rice slapped maybe cause we were 6 drinks in. At 7:00-7:30 they had unlimited drinks, we initially thought it was just 1 drink, we had 5 rounds after a cocktail each. We discovered our new favourite mix, vodka pineapple. We ran out of money so Chris and Sri had to do a detour to the Airbnb to get more cash. At 8pm they gave free shots, the bartender stood on the bar and poured alcohol into our mouths, we did it twice. This night went absolutely crazy, mind you this was an expensive beachside restaurant with couples, we were hitting crazy ass moves on the sand dance floor, throwing the pizza crust into the ocean. Seb almost fell before doing a cartwheel. seb and Chris has to hit a Tactical Chunder (TC), seb’s TC had crazy recoil. Then we headed out to look for KTV, unfortunately all the stores were closed… But we said fuck it and hopped on Bonnie Blue singing karaoke for 30 minutes, unbelievable experience. We even sped past some cops and seb proceeded to drop his phone while singing some kanye west.",
           "Just goes to show no matter the situation my boy Chris can make light of anything and have a good ass time."
         ],
         images: [
@@ -1032,7 +1033,8 @@
       $("scoreBar").style.width = (data.total / MAX_SCORE) * 100 + "%";
       roundEl.textContent = ROUNDS;
       updatePips(data.results, -1);
-      promptEl.innerHTML = "🎉 Happy birthday Christian!<br><small>Love your brothers, Sebastian &amp; Sri</small>";
+      promptEl.classList.add("birthday");
+      promptEl.innerHTML = '<div class="birthday-title">🎉 Happy birthday Christian!</div><div class="birthday-subtitle">Love your brothers, Sebastian &amp; Sri</div>';
 
       buildRing(data);
     }
