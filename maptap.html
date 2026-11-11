@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TapMap Daily – Globe</title>
+  <meta property="og:title" content="TapMap Daily" />
+  <meta property="og:description" content="Find 5 places on the globe every day. How close can you get?" />
+  <style>
+    :root {
+      --bg:#0b1020; --panel:#121a33; --panel2:#18224a; --accent:#3b82f6;
+      --text:#e5e7eb; --muted:#94a3b8; --panelW: clamp(240px, 22vw, 320px);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: var(--bg); color: var(--text);
+      display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+    }
+
+    /* ---------- Header ---------- */
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 16px; background: var(--panel); gap: 12px; flex-wrap: wrap;
+    }
+    header h1 { margin: 0; font-size: 1.25rem; }
+    .back { color: var(--muted); font-weight: 700; font-size: .9rem; text-decoration: none; }
+    .back:hover, .back:focus-visible { color: #fff; text-decoration: underline; }
+    .pips { display: flex; gap: 6px; }
+    .pip {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: #1f2a4d; border: 2px solid #2c3a66;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .72rem; font-weight: 800; color: var(--muted); transition: all .3s;
+    }
+    .pip.current { border-color: var(--accent); color: #fff; transform: scale(1.12); box-shadow: 0 0 12px rgba(59,130,246,.6); }
+    .pip.done { color: #0b1020; border-color: transparent; }
+    .stats { display: flex; align-items: center; gap: 18px; }
+    .scoreBox { min-width: 150px; }
+    .scoreTop { display: flex; justify-content: space-between; align-items: baseline; font-size: .8rem; color: var(--muted); }
+    .scoreTop b { color: #fff; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+    .bar { height: 6px; background: #1f2a4d; border-radius: 4px; overflow: hidden; margin-top: 4px; }
+    .bar > div { height: 100%; width: 0; background: linear-gradient(90deg, #3b82f6, #22c55e); transition: width .9s ease; }
+    .timer { font-variant-numeric: tabular-nums; }
+    #prompt { text-align: center; padding: 10px; font-size: 1.2rem; background: var(--panel2); font-weight: 600; }
+
+    /* ---------- Globe ---------- */
+    #globeWrap { position: relative; flex: 1; overflow: hidden; }
+    #globe { width: 100%; height: 100%; cursor: crosshair; }
+    body.results #globe { cursor: grab; }
+    #loading {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: var(--bg); font-size: 1.1rem; z-index: 300;
+    }
+    #loading .err { max-width: 460px; padding: 20px; text-align: left; line-height: 1.5; font-size: .95rem; }
+    #attrib {
+      position: absolute; bottom: 6px; right: 8px; z-index: 2; pointer-events: none;
+      font-size: .7rem; color: rgba(255,255,255,.75); background: rgba(0,0,0,.45);
+      padding: 2px 6px; border-radius: 4px;
+    }
+    #popup {
+      position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%);
+      font-size: 3.2rem; font-weight: 900; text-align: center;
+      pointer-events: none; opacity: 0; z-index: 2; text-shadow: 0 4px 24px rgba(0,0,0,.7);
+    }
+    #popup small { display: block; font-size: 1.1rem; font-weight: 700; }
+    #popup.show { animation: pop 1.7s ease-out forwards; }
+    @keyframes pop {
+      0%   { opacity: 0; transform: translate(-50%, -30%) scale(.6); }
+      15%  { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+      30%  { transform: translate(-50%, -50%) scale(1); }
+      75%  { opacity: 1; }
+      100% { opacity: 0; transform: translate(-50%, -90%); }
+    }
+    @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+    /* ---------- Feedback bar ---------- */
+    #feedback {
+      display: flex; align-items: center; justify-content: center;
+      gap: 18px; padding: 12px 16px; background: var(--panel); flex-wrap: wrap;
+    }
+    body.results #feedback { display: none; }
+    .ring { position: relative; width: 64px; height: 64px; }
+    .ring svg { transform: rotate(-90deg); }
+    .track { stroke: #1f2a4d; }
+    .fill { stroke-linecap: round; transition: stroke-dashoffset 1s ease, stroke .3s; }
+    .ring span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; }
+    .info { min-width: 210px; }
+    #ratingText { font-weight: 800; font-size: 1.1rem; }
+    #distanceText { color: var(--muted); font-size: .9rem; }
+    button {
+      background: var(--accent); color: #fff; border: none; border-radius: 8px;
+      padding: 10px 18px; font-size: 1rem; font-weight: 600; cursor: pointer;
+    }
+    button:disabled { background: #334155; color: #94a3b8; cursor: not-allowed; }
+    button:not(:disabled):hover { filter: brightness(1.1); }
+    .iconBtn { background: transparent; padding: 4px 8px; font-size: 1.25rem; line-height: 1; }
+    .iconBtn:hover { background: rgba(255,255,255,.08) !important; filter: none !important; }
+
+    /* ---------- Results summary (bottom-left) ---------- */
+    #summary {
+      position: absolute; left: 14px; bottom: 14px; z-index: 250; width: 250px;
+      background: rgba(18,26,51,.88); backdrop-filter: blur(8px);
+      border-radius: 14px; padding: 12px 14px; box-shadow: 0 10px 30px rgba(0,0,0,.45);
+      animation: rise .4s ease;
+    }
+    #summary.hidden { display: none; }
+    .lbl { font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+    #finalScore { font-size: 2rem; font-weight: 900; line-height: 1.1; }
+    #finalScore small { font-size: .85rem; font-weight: 500; color: var(--muted); }
+    #rankTitle { font-weight: 800; margin: 2px 0 6px; }
+    .tabs { display: flex; gap: 5px; margin: 10px 0; }
+    .tab {
+      flex: 1; padding: 5px 0; border-radius: 8px; font-size: .72rem; font-weight: 800;
+      color: #0b1020; border: 2px solid transparent; line-height: 1.2;
+    }
+    .tab.active { border-color: #fff; }
+    #copyBtn { width: 100%; padding: 8px; font-size: .9rem; }
+
+    /* ---------- Story ring orbiting the globe ---------- */
+    #orbitRing { position: absolute; inset: 0; z-index: 5; pointer-events: none; perspective: 1400px; }
+    #orbitRing.hidden { display: none; }
+    #orbitLines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+    #orbitLines line { stroke-width: 1.5; stroke-dasharray: 4 5; filter: drop-shadow(0 0 2px rgba(0,0,0,.9)); }
+
+    .orbit {
+      position: absolute; left: 0; top: 0; width: var(--panelW);
+      transform-origin: center center; will-change: transform, opacity;
+      color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,1), 0 2px 12px rgba(0,0,0,.9);
+    }
+    .sHead { display: flex; align-items: center; gap: 8px; }
+    .badge {
+      flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: #0b1020; font-weight: 900; font-size: .85rem; text-shadow: none;
+    }
+    .orbit.active .badge { box-shadow: 0 0 0 3px #fff, 0 0 16px rgba(255,255,255,.6); }
+    .sHead h3 { margin: 0; flex: 1; font-size: 1.15rem; font-weight: 900; line-height: 1.15;
+                white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sPts { font-weight: 900; font-size: 1.05rem; }
+    .sMeta { font-size: .78rem; opacity: .85; margin: 2px 0 8px 34px; }
+    .sText {
+      max-height: 30vh; overflow-y: auto; padding-bottom: 16px; scrollbar-width: none;
+      -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent);
+              mask-image: linear-gradient(to bottom, #000 82%, transparent);
+    }
+    .sText::-webkit-scrollbar { display: none; }
+    .sText p { margin: 0 0 9px; font-size: .85rem; line-height: 1.55; color: #f1f5f9; }
+    .sText p.shimmer { height: 46px; border-radius: 8px; text-shadow: none; }
+    .credit { font-size: .68rem; opacity: .75; }
+    .credit a { color: #93c5fd; }
+
+    .carousel {
+      position: relative; height: 140px; border-radius: 12px; overflow: hidden; margin-bottom: 10px;
+      box-shadow: 0 12px 34px rgba(0,0,0,.65);
+    }
+    .slides { display: flex; height: 100%; transition: transform .45s ease; }
+    .slide { min-width: 100%; height: 100%; background: #111 center/cover no-repeat; }
+    .shimmer {
+      background: linear-gradient(90deg, #141c38 25%, #1e2a52 50%, #141c38 75%) !important;
+      background-size: 200% 100% !important; animation: shim 1.2s infinite;
+    }
+    @keyframes shim { to { background-position: -200% 0; } }
+    .nav {
+      position: absolute; top: 50%; transform: translateY(-50%); z-index: 2;
+      width: 26px; height: 26px; padding: 0; font-size: 1.1rem; border-radius: 50%;
+      background: rgba(0,0,0,.45);
+    }
+    .nav.prev { left: 6px; } .nav.next { right: 6px; }
+    .dots { position: absolute; bottom: 6px; left: 0; right: 0; display: flex; justify-content: center; gap: 5px; z-index: 2; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.45); cursor: pointer; }
+    .dot.on { background: #fff; }
+
+    /* ---------- Flat fallback (mobile / older globe.gl) ---------- */
+    body.flat #orbitRing {
+      inset: auto 0 0 0; height: 55%; overflow-y: auto; pointer-events: auto; perspective: none;
+      padding: 50px 12px 12px; background: linear-gradient(to top, rgba(5,8,20,.96) 70%, transparent);
+    }
+    body.flat #orbitLines { display: none; }
+    body.flat .orbit {
+      position: static; width: 100%; margin-bottom: 28px;
+      transform: none !important; opacity: 1 !important; pointer-events: auto !important;
+    }
+    body.flat .carousel { height: 150px; }
+    body.flat .sText { max-height: none; overflow: visible; -webkit-mask-image: none; mask-image: none; }
+
+    @media (max-width: 800px) {
+      #summary { top: 8px; bottom: auto; left: 8px; right: 8px; width: auto; padding: 8px 12px; }
+      #finalScore { font-size: 1.4rem; }
+      .tabs { margin: 6px 0; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="back" href="./">&larr; All games</a>
+    <h1>🌍 TapMap Daily</h1>
+    <div class="pips" id="pips"></div>
+    <div class="stats">
+      <div class="scoreBox">
+        <div class="scoreTop"><span>Round <b id="round">1</b>/5</span><span>Score <b id="score">0</b></span></div>
+        <div class="bar"><div id="scoreBar"></div></div>
+      </div>
+      <div class="timer">⏱ <b id="timer">0.0</b>s</div>
+      <button id="muteBtn" class="iconBtn" aria-label="Toggle sound" title="Sound (M)">🔊</button>
+    </div>
+  </header>
+
+  <div id="prompt">Find: …</div>
+
+  <div id="globeWrap">
+    <div id="globe"></div>
+    <div id="loading">Loading globe…</div>
+    <div id="attrib" style="display:none"></div>
+    <div id="popup"></div>
+
+    <div id="orbitRing" class="hidden">
+      <svg id="orbitLines"></svg>
+    </div>
+
+    <div id="summary" class="hidden">
+      <div class="lbl">Today's Results</div>
+      <div id="finalScore">0 <small>/ 500</small></div>
+      <div id="rankTitle"></div>
+      <div class="bar"><div id="sumBar"></div></div>
+      <div class="tabs" id="tabs"></div>
+      <button id="copyBtn">📋 Copy Results</button>
+    </div>
+  </div>
+
+  <div id="feedback">
+    <div class="ring">
+      <svg width="64" height="64">
+        <circle class="track" cx="32" cy="32" r="27" fill="none" stroke-width="6" />
+        <circle id="ringFill" class="fill" cx="32" cy="32" r="27" fill="none" stroke-width="6"
+                stroke="#3b82f6" stroke-dasharray="169.65" stroke-dashoffset="169.65" />
+      </svg>
+      <span id="roundPoints">0</span>
+    </div>
+    <div class="info">
+      <div id="ratingText">Make your guess</div>
+      <div id="distanceText">Click anywhere on the globe</div>
+    </div>
+    <button id="nextBtn" disabled>Next ➜</button>
+  </div>
+
+  <script>
+    // ================= CONFIG =================
+    const ROUNDS = 5;
+    const SMALL_C = 169.65;
+    const TEX = "https://unpkg.com/three-globe/example/img/";
+    const SHARE_URL = "";   // e.g. "https://YOUR-USERNAME.github.io/tapmap-daily/"
+
+    // Satellite imagery
+    const USE_TILES = true;
+    const SATELLITE_TILES = (x, y, l) =>
+      `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${l}/${y}/${x}`;
+    const TILE_MAX_LEVEL = 18;
+    const TILE_ATTRIBUTION = "Imagery © Esri, Maxar, Earthstar Geographics";
+    const HIGH_RES_TEXTURE = "";   // e.g. "textures/8k_earth_daymap.jpg"
+    const FALLBACK_TEXTURE = HIGH_RES_TEXTURE || TEX + "earth-blue-marble.jpg";
+
+    // Story ring
+    const STORY_PARAGRAPHS = 4;
+    const STORY_IMAGES = 3;
+    const RING_LAT = 0;
+    const RING_ALT = 0.45;
+    const RING_VIEW_LAT = 12;
+    const RESULTS_ALTITUDE = 2.4;
+    const CURVE = 0.6;
+    const AUTO_ROTATE = true;
+    const AUTO_ROTATE_SPEED = 0.35;
+    const MOBILE_PIN_OFFSET_LAT = -25;
+
+    // Sound
+    const SFX_VOLUME = 0.5;   // 0 to 1
+
+    const GLOBE_LIB_URLS = ["https://cdn.jsdelivr.net/npm/globe.gl", "https://unpkg.com/globe.gl"];
+
+    // Optional per-location fields: wiki (article title), blurb ([...paragraphs]), images ([...urls])
+    const LOCATIONS = [
+      { name: "Paris, France", lat: 48.8566, lng: 2.3522 },
+      { name: "Tokyo, Japan", lat: 35.6762, lng: 139.6503 },
+      { name: "Cairo, Egypt", lat: 30.0444, lng: 31.2357 },
+      { name: "Sydney, Australia", lat: -33.8688, lng: 151.2093 },
+      { name: "Rio de Janeiro, Brazil", lat: -22.9068, lng: -43.1729 },
+      { name: "New York City, USA", lat: 40.7128, lng: -74.0060 },
+      { name: "Cape Town, South Africa", lat: -33.9249, lng: 18.4241 },
+      { name: "Reykjavík, Iceland", lat: 64.1466, lng: -21.9426 },
+      { name: "Mumbai, India", lat: 19.0760, lng: 72.8777 },
+      { name: "Mexico City, Mexico", lat: 19.4326, lng: -99.1332 },
+      { name: "Moscow, Russia", lat: 55.7558, lng: 37.6173 },
+      { name: "Buenos Aires, Argentina", lat: -34.6037, lng: -58.3816 },
+      { name: "Nairobi, Kenya", lat: -1.2921, lng: 36.8219 },
+      { name: "Bangkok, Thailand", lat: 13.7563, lng: 100.5018 },
+      { name: "Lima, Peru", lat: -12.0464, lng: -77.0428 },
+      { name: "Istanbul, Türkiye", lat: 41.0082, lng: 28.9784 },
+      { name: "Vancouver, Canada", lat: 49.2827, lng: -123.1207 },
+      { name: "Auckland, New Zealand", lat: -36.8485, lng: 174.7633 },
+      { name: "Honolulu, USA", lat: 21.3069, lng: -157.8583 },
+      { name: "Lagos, Nigeria", lat: 6.5244, lng: 3.3792 },
+      { name: "Singapore", lat: 1.3521, lng: 103.8198 },
+      { name: "Rome, Italy", lat: 41.9028, lng: 12.4964 },
+      { name: "Ulaanbaatar, Mongolia", lat: 47.8864, lng: 106.9057 },
+      { name: "Anchorage, USA", lat: 61.2181, lng: -149.9003, wiki: "Anchorage, Alaska" },
+      { name: "Dubai, UAE", lat: 25.2048, lng: 55.2708 },
+      { name: "Santiago, Chile", lat: -33.4489, lng: -70.6693, wiki: "Santiago" },
+      { name: "Stockholm, Sweden", lat: 59.3293, lng: 18.0686 },
+      { name: "Antananarivo, Madagascar", lat: -18.8792, lng: 47.5079 },
+      { name: "Kathmandu, Nepal", lat: 27.7172, lng: 85.3240 },
+      { name: "Havana, Cuba", lat: 23.1136, lng: -82.3666 }
+    ];
+
+    // ================= HELPERS =================
+    function todayKey() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
+    function hashString(s) {
+      let h = 2166136261;
+      for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+      return h >>> 0;
+    }
+    function mulberry32(a) {
+      return function () {
+        a |= 0; a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    function pickDaily(dateKey) {
+      const rand = mulberry32(hashString(dateKey));
+      const arr = [...LOCATIONS];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr.slice(0, ROUNDS);
+    }
+    function haversineKm(lat1, lng1, lat2, lng2) {
+      const R = 6371, toRad = x => (x * Math.PI) / 180;
+      const dLat = toRad(lat2 - lat1), dLng = toRad(lng2 - lng1);
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+      return 2 * R * Math.asin(Math.sqrt(a));
+    }
+    function scoreFor(km) {
+      if (km <= 25) return 100;
+      return Math.max(0, Math.round(100 * Math.exp(-km / 2000)));
+    }
+    function rating(p) {
+      if (p >= 95) return { label: "Perfect!",  color: "#22c55e", emoji: "🎯" };
+      if (p >= 80) return { label: "Excellent", color: "#4ade80", emoji: "🟩" };
+      if (p >= 50) return { label: "Good",      color: "#facc15", emoji: "🟨" };
+      if (p >= 20) return { label: "Close-ish", color: "#fb923c", emoji: "🟧" };
+      return            { label: "Way off",   color: "#ef4444", emoji: "🟥" };
+    }
+    function rankFor(total) {
+      if (total >= 450) return "🌟 Globetrotter";
+      if (total >= 350) return "🧭 Navigator";
+      if (total >= 250) return "🗺️ Explorer";
+      if (total >= 150) return "🎒 Tourist";
+      return "🐣 Rookie";
+    }
+    function animateNumber(el, from, to, ms = 800, suffix = "") {
+      const start = performance.now();
+      function step(now) {
+        const p = Math.min(1, (now - start) / ms);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.innerHTML = Math.round(from + (to - from) * eased) + suffix;
+        if (p < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+    function setRing(el, C, frac, color) {
+      el.style.strokeDashoffset = C * (1 - frac);
+      el.style.stroke = color;
+    }
+    function hasWebGL() {
+      try {
+        const c = document.createElement("canvas");
+        return !!(window.WebGLRenderingContext && (c.getContext("webgl") || c.getContext("experimental-webgl")));
+      } catch { return false; }
+    }
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = src; s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+    async function loadGlobeLib() {
+      for (const src of GLOBE_LIB_URLS) {
+        try { await loadScript(src); if (typeof Globe === "function") return true; }
+        catch { console.warn("Could not load", src); }
+      }
+      return false;
+    }
+    function createGlobe(el) {
+      try { return Globe()(el); } catch { return new Globe(el); }
+    }
+    const findLoc = name => LOCATIONS.find(l => l.name === name);
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(v, hi));
+    const isMobile = () => window.innerWidth <= 800;
+    const anchorSupported = () => globe && typeof globe.getScreenCoords === "function" && typeof globe.getCoords === "function";
+    const updateFlat = () => document.body.classList.toggle("flat", isMobile() || !anchorSupported());
+
+    // ================= SOUND EFFECTS (Web Audio, no files needed) =================
+    const SFX = (() => {
+      let ctx = null, master = null;
+      let muted = localStorage.getItem("tapmap-muted") === "1";
+
+      function ensure() {
+        if (!ctx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return null;
+          ctx = new AC();
+          master = ctx.createGain();
+          master.gain.value = SFX_VOLUME;
+          master.connect(ctx.destination);
+        }
+        if (ctx.state === "suspended") ctx.resume();
+        return ctx;
+      }
+
+      function tone(freq, start, dur, { type = "sine", vol = 0.3, slideTo = null } = {}) {
+        const t = ctx.currentTime + start;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = type;
+        o.frequency.setValueAtTime(freq, t);
+        if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g); g.connect(master);
+        o.start(t); o.stop(t + dur + 0.05);
+      }
+
+      function noise(start, dur, { vol = 0.2, from = 800, to = 3000 } = {}) {
+        const t = ctx.currentTime + start;
+        const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * dur), ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+        const src = ctx.createBufferSource(); src.buffer = buf;
+        const f = ctx.createBiquadFilter(); f.type = "bandpass"; f.Q.value = 1.2;
+        f.frequency.setValueAtTime(from, t);
+        f.frequency.exponentialRampToValueAtTime(to, t + dur);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(vol, t + dur * 0.3);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        src.connect(f); f.connect(g); g.connect(master);
+        src.start(t); src.stop(t + dur + 0.05);
+      }
+
+      const play = fn => { if (muted || !ensure()) return; try { fn(); } catch (e) { console.warn(e); } };
+
+      return {
+        unlock: () => { if (!muted) ensure(); },
+        isMuted: () => muted,
+        setMuted(m) { muted = m; localStorage.setItem("tapmap-muted", m ? "1" : "0"); if (!m) ensure(); },
+
+        reveal: points => play(() => {
+          tone(880, 0, 0.12, { type: "triangle", vol: 0.35, slideTo: 440 });
+          noise(0, 0.08, { vol: 0.08, from: 2000, to: 600 });
+          const ticks = Math.max(1, Math.round(points / 12));
+          const tallyEnd = 0.2 + ticks * 0.07;
+          for (let k = 0; k < ticks; k++) tone(900 + k * 60, 0.2 + k * 0.07, 0.04, { type: "square", vol: 0.05 });
+          const s = tallyEnd + 0.05;
+          if (points >= 95) {
+            [523, 659, 784, 1047].forEach((f, i) => tone(f, s + i * 0.08, 0.4, { type: "triangle", vol: 0.22 }));
+            tone(2093, s + 0.34, 0.6, { vol: 0.1 });
+          } else if (points >= 50) {
+            tone(523, s, 0.2, { type: "triangle", vol: 0.25 });
+            tone(784, s + 0.1, 0.3, { type: "triangle", vol: 0.25 });
+          } else if (points >= 20) {
+            tone(440, s, 0.3, { type: "triangle", vol: 0.22 });
+          } else {
+            tone(220, s, 0.4, { type: "sawtooth", vol: 0.1, slideTo: 130 });
+          }
+        }),
+
+        whoosh: () => play(() => noise(0, 0.35, { vol: 0.16, from: 400, to: 2600 })),
+
+        fanfare: total => play(() => {
+          const notes = total >= 350 ? [523, 659, 784, 1047, 1319]
+                      : total >= 150 ? [523, 659, 784]
+                      : [392, 494, 523];
+          notes.forEach((f, i) => tone(f, 0.15 + i * 0.12, 0.35, { type: "triangle", vol: 0.22 }));
+          const end = 0.15 + notes.length * 0.12;
+          [notes[0], notes[notes.length - 1] / 2 * 1.5, notes[notes.length - 1]]
+            .forEach(f => tone(f, end, 1.0, { type: "sine", vol: 0.12 }));
+        }),
+
+        copy: () => play(() => {
+          tone(988, 0, 0.08, { type: "triangle", vol: 0.2 });
+          tone(1319, 0.07, 0.15, { type: "triangle", vol: 0.2 });
+        })
+      };
+    })();
+
+    // Browsers only allow audio after the first click or tap
+    document.addEventListener("pointerdown", () => SFX.unlock(), { once: true });
+
+    // ================= DOM =================
+    const $ = id => document.getElementById(id);
+    const roundEl = $("round"), scoreEl = $("score"), timerEl = $("timer");
+    const promptEl = $("prompt"), nextBtn = $("nextBtn"), wrap = $("globeWrap");
+    const ringFill = $("ringFill"), ringText = $("roundPoints");
+    const ratingEl = $("ratingText"), distanceEl = $("distanceText");
+    const pipsEl = $("pips"), popupEl = $("popup"), loadingEl = $("loading"), attribEl = $("attrib");
+    const summaryEl = $("summary"), tabsEl = $("tabs");
+    const ringEl = $("orbitRing"), linesSvg = $("orbitLines");
+    const muteBtn = $("muteBtn");
+
+    // Mute button and the M key
+    const refreshMute = () => { muteBtn.textContent = SFX.isMuted() ? "🔇" : "🔊"; };
+    refreshMute();
+    muteBtn.addEventListener("click", e => { SFX.setMuted(!SFX.isMuted()); refreshMute(); e.currentTarget.blur(); });
+    document.addEventListener("keydown", e => {
+      if (e.key === "m" || e.key === "M") { SFX.setMuted(!SFX.isMuted()); refreshMute(); }
+    });
+
+    for (let i = 0; i < ROUNDS; i++) {
+      const d = document.createElement("div");
+      d.className = "pip"; d.textContent = i + 1;
+      pipsEl.appendChild(d);
+    }
+    function updatePips(list, current) {
+      [...pipsEl.children].forEach((p, i) => {
+        p.className = "pip"; p.style.background = ""; p.textContent = i + 1;
+        if (list[i]) {
+          p.classList.add("done");
+          p.style.background = rating(list[i].points).color;
+          p.textContent = list[i].points;
+        } else if (i === current) p.classList.add("current");
+      });
+    }
+    function showPopup(points, r) {
+      popupEl.innerHTML = `<span style="color:${r.color}">+${points}</span><small>${r.emoji} ${r.label}</small>`;
+      popupEl.classList.remove("show");
+      void popupEl.offsetWidth;
+      popupEl.classList.add("show");
+    }
+    function hideLoading() { loadingEl.style.display = "none"; }
+    function fail(reason) {
+      loadingEl.style.display = "flex";
+      loadingEl.innerHTML = `<div class="err"><h3>⚠️ The globe couldn't start</h3><p>${reason}</p>
+        <ul><li>Open the file in Chrome, Edge, or Firefox, not an in-app preview.</li>
+        <li>Run it from a local server (VS Code Live Server or <code>npx serve</code>) or GitHub Pages.</li>
+        <li>Check your connection and pause ad/script blockers.</li>
+        <li>Press F12 → Console to see the exact error.</li></ul></div>`;
+      promptEl.textContent = "Globe unavailable";
+      return false;
+    }
+
+    // ================= STATE =================
+    const DATE = todayKey();
+    const STORAGE_KEY = "tapmap-" + DATE;
+    const targets = pickDaily(DATE);
+    let roundIdx = 0, total = 0, guessed = false, startTime = 0, timerId = null;
+    let globe = null, resultsMode = false, resultsData = null, resumeTimer = null;
+    const results = [];
+
+    // ================= GLOBE =================
+    function applySatellite() {
+      if (USE_TILES && typeof globe.globeTileEngineUrl === "function") {
+        globe.globeImageUrl(null).bumpImageUrl(null).globeTileEngineUrl(SATELLITE_TILES);
+        if (typeof globe.globeTileEngineMaxLevel === "function") globe.globeTileEngineMaxLevel(TILE_MAX_LEVEL);
+        attribEl.textContent = TILE_ATTRIBUTION;
+        attribEl.style.display = "";
+      } else {
+        globe.globeImageUrl(FALLBACK_TEXTURE).bumpImageUrl(TEX + "earth-topology.png");
+      }
+    }
+    function sharpenTexture() {
+      try {
+        const mat = globe.globeMaterial();
+        if (mat && mat.map) {
+          mat.map.anisotropy = globe.renderer().capabilities.getMaxAnisotropy();
+          mat.map.needsUpdate = true;
+        }
+      } catch { /* not critical */ }
+    }
+    function setAutoRotate(on) {
+      try {
+        const c = globe.controls();
+        c.autoRotate = on && AUTO_ROTATE;
+        c.autoRotateSpeed = AUTO_ROTATE_SPEED;
+      } catch { /* not critical */ }
+    }
+
+    async function initGlobe() {
+      if (!hasWebGL()) return fail("WebGL is turned off or not supported on this browser/device.");
+      if (!(await loadGlobeLib())) return fail("The 3D globe library couldn't be downloaded.");
+      try {
+        globe = createGlobe($("globe"))
+          .backgroundImageUrl(TEX + "night-sky.png")
+          .showAtmosphere(true).atmosphereColor("#7dd3fc").atmosphereAltitude(0.18)
+          .width(wrap.clientWidth).height(wrap.clientHeight)
+          .pointLat("lat").pointLng("lng").pointColor("color")
+          .pointAltitude(0.02).pointRadius(0.45)
+          .arcStartLat("startLat").arcStartLng("startLng").arcEndLat("endLat").arcEndLng("endLng")
+          .arcColor(() => ["#ef4444", "#22c55e"])
+          .arcStroke(0.7).arcDashLength(0.4).arcDashGap(0.15).arcDashAnimateTime(1400)
+          .labelLat("lat").labelLng("lng").labelText("text")
+          .labelSize(1.5).labelDotRadius(0.4).labelColor(() => "#ffffff").labelAltitude(0.025)
+          .ringColor(() => t => `rgba(34,197,94,${1 - t})`)
+          .ringMaxRadius(4).ringPropagationSpeed(2.5).ringRepeatPeriod(800)
+          .onGlobeClick(handleGuess);
+      } catch (e) {
+        console.error(e);
+        return fail("Startup error: " + e.message);
+      }
+      globe.renderer().setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      applySatellite();
+      if (typeof globe.onGlobeReady === "function") globe.onGlobeReady(() => { hideLoading(); sharpenTexture(); });
+      setTimeout(() => { hideLoading(); sharpenTexture(); }, 8000);
+      window.addEventListener("resize", () => {
+        globe.width(wrap.clientWidth).height(wrap.clientHeight);
+        if (resultsMode) updateFlat();
+      });
+      requestAnimationFrame(ringLoop);
+      return true;
+    }
+
+    // ================= GAME FLOW =================
+    function startTimer() {
+      startTime = performance.now();
+      clearInterval(timerId);
+      timerId = setInterval(() => {
+        timerEl.textContent = ((performance.now() - startTime) / 1000).toFixed(1);
+      }, 100);
+    }
+    function stopTimer() {
+      clearInterval(timerId);
+      return (performance.now() - startTime) / 1000;
+    }
+
+    function startRound() {
+      guessed = false;
+      const t = targets[roundIdx];
+      roundEl.textContent = roundIdx + 1;
+      promptEl.textContent = `📍 Find: ${t.name}`;
+      setRing(ringFill, SMALL_C, 0, "#3b82f6");
+      ringText.textContent = "0";
+      ratingEl.textContent = "Make your guess";
+      ratingEl.style.color = "";
+      distanceEl.textContent = "Click anywhere on the globe";
+      nextBtn.disabled = true;
+      nextBtn.textContent = roundIdx === ROUNDS - 1 ? "See Results ➜" : "Next ➜";
+      updatePips(results, roundIdx);
+      globe.pointsData([]).arcsData([]).labelsData([]).ringsData([]);
+      globe.pointOfView({ lat: 20, lng: 0, altitude: 2.5 }, 800);
+      timerEl.textContent = "0.0";
+      startTimer();
+    }
+
+    function handleGuess({ lat, lng }) {
+      if (resultsMode || guessed || roundIdx >= ROUNDS) return;
+      guessed = true;
+      const time = stopTimer();
+      const t = targets[roundIdx];
+      const km = haversineKm(lat, lng, t.lat, t.lng);
+      const points = scoreFor(km);
+      const r = rating(points);
+      const prev = total;
+      total += points;
+      results.push({ name: t.name, lat: t.lat, lng: t.lng, guessLat: lat, guessLng: lng, km: Math.round(km), points, time });
+      fetchStory(t);   // preload the story during the game
+
+      globe
+        .pointsData([{ lat, lng, color: "#ef4444" }, { lat: t.lat, lng: t.lng, color: "#22c55e" }])
+        .arcsData([{ startLat: lat, startLng: lng, endLat: t.lat, endLng: t.lng }])
+        .labelsData([{ lat: t.lat, lng: t.lng, text: t.name }])
+        .ringsData([{ lat: t.lat, lng: t.lng }])
+        .pointOfView({ lat: t.lat, lng: t.lng, altitude: Math.min(2.5, 0.9 + km / 5000) }, 1200);
+
+      animateNumber(scoreEl, prev, total);
+      $("scoreBar").style.width = (total / (ROUNDS * 100)) * 100 + "%";
+      setRing(ringFill, SMALL_C, points / 100, r.color);
+      animateNumber(ringText, 0, points, 900);
+      ratingEl.textContent = `${r.emoji} ${r.label}`;
+      ratingEl.style.color = r.color;
+      distanceEl.textContent = `${Math.round(km).toLocaleString()} km away · ${time.toFixed(1)}s`;
+      showPopup(points, r);
+      SFX.reveal(points);
+      updatePips(results, -1);
+      nextBtn.disabled = false;
+      nextBtn.focus();
+    }
+
+    function nextRound() {
+      if (!guessed) return;
+      SFX.whoosh();
+      roundIdx++;
+      if (roundIdx >= ROUNDS) finishGame();
+      else startRound();
+    }
+
+    function finishGame() {
+      const data = { total, results };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      SFX.fanfare(total);
+      showResults(data);
+    }
+
+    function buildShareText(data) {
+      const emojis = data.results.map(r => rating(r.points).emoji).join("");
+      const totalTime = data.results.reduce((s, r) => s + (r.time || 0), 0).toFixed(1);
+      return `🌍 TapMap Daily ${DATE}\n${emojis}\nScore: ${data.total}/500 · ${rankFor(data.total)}\n⏱ ${totalTime}s` +
+        (SHARE_URL ? `\n${SHARE_URL}` : "");
+    }
+
+    // ================= STORY CONTENT (Wikipedia) =================
+    const storyCache = {};
+    const BAD_IMG = /(flag|coat[_ ]of[_ ]arms|logo|seal|emblem|icon|symbol|map|locator|location|signature|diagram|chart|graph)/i;
+
+    async function wikiGet(params) {
+      const res = await fetch("https://en.wikipedia.org/w/api.php?origin=*&format=json&formatversion=2&redirects=1&" + params);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    }
+    function fetchStory(loc) {
+      if (!storyCache[loc.name]) storyCache[loc.name] = loadStory(loc);
+      return storyCache[loc.name];
+    }
+    async function loadStory(loc) {
+      const t = encodeURIComponent(loc.wiki || loc.name.split(",")[0]);
+      const story = {
+        paragraphs: loc.blurb ? [...loc.blurb] : [],
+        images: (loc.images || []).map(src => ({ src, page: src })),
+        url: `https://en.wikipedia.org/wiki/${t}`,
+        fromWiki: !loc.blurb
+      };
+      let leadFile = "";
+      try {
+        const j = await wikiGet(`action=query&prop=extracts|pageimages&explaintext=1&piprop=thumbnail|name&pithumbsize=1000&titles=${t}`);
+        const page = j.query.pages[0];
+        if (!story.paragraphs.length && page.extract) {
+          story.paragraphs = page.extract.split("\n")
+            .map(s => s.trim())
+            .filter(s => s.length > 80 && !s.startsWith("="))
+            .slice(0, STORY_PARAGRAPHS);
+        }
+        if (page.thumbnail && story.images.length < STORY_IMAGES) {
+          story.images.push({ src: page.thumbnail.source, page: story.url });
+          leadFile = (page.pageimage || "").replace(/ /g, "_");
+        }
+      } catch (e) { console.warn("Wikipedia text failed", e); }
+
+      if (story.images.length < STORY_IMAGES) {
+        try {
+          const j = await wikiGet(`action=query&generator=images&gimlimit=60&prop=imageinfo&iiprop=url&iiurlwidth=1000&titles=${t}`);
+          const files = (j.query?.pages || []).filter(p =>
+            p.imageinfo && /\.jpe?g$/i.test(p.title) && !BAD_IMG.test(p.title) &&
+            p.title.replace(/^File:/, "").replace(/ /g, "_") !== leadFile);
+          for (const f of files) {
+            if (story.images.length >= STORY_IMAGES) break;
+            story.images.push({ src: f.imageinfo[0].thumburl || f.imageinfo[0].url, page: f.imageinfo[0].descriptionurl });
+          }
+        } catch (e) { console.warn("Wikipedia images failed", e); }
+      }
+      return story;
+    }
+
+    // ================= CAROUSEL (one per story) =================
+    function makeCarousel(root, delay) {
+      const slides = root.querySelector(".slides"), dots = root.querySelector(".dots");
+      const prev = root.querySelector(".prev"), next = root.querySelector(".next");
+      let idx = 0, count = 0, timer = null, touchX = null;
+      const go = k => {
+        idx = (k + count) % count;
+        slides.style.transform = `translateX(-${idx * 100}%)`;
+        [...dots.children].forEach((d, j) => d.classList.toggle("on", j === idx));
+      };
+      const restart = () => {
+        clearInterval(timer);
+        if (count > 1) timer = setInterval(() => go(idx + 1), 5000 + delay);
+      };
+      prev.onclick = () => { go(idx - 1); restart(); };
+      next.onclick = () => { go(idx + 1); restart(); };
+      root.addEventListener("touchstart", e => (touchX = e.touches[0].clientX), { passive: true });
+      root.addEventListener("touchend", e => {
+        if (touchX === null) return;
+        const dx = e.changedTouches[0].clientX - touchX;
+        if (Math.abs(dx) > 40) { go(idx + (dx < 0 ? 1 : -1)); restart(); }
+        touchX = null;
+      });
+      return {
+        set(images, loading) {
+          slides.innerHTML = ""; dots.innerHTML = "";
+          const list = images.length ? images : [null];
+          count = list.length;
+          list.forEach((im, k) => {
+            const s = document.createElement("div");
+            s.className = "slide" + (im ? "" : (loading ? " shimmer" : ""));
+            if (im) s.style.backgroundImage = `url("${im.src}")`;
+            slides.appendChild(s);
+            const d = document.createElement("div");
+            d.className = "dot";
+            d.onclick = () => { go(k); restart(); };
+            dots.appendChild(d);
+          });
+          prev.style.display = next.style.display = dots.style.display = count > 1 ? "" : "none";
+          go(0);
+          restart();
+        }
+      };
+    }
+
+    // ================= RESULTS: STORY RING =================
+    const ringItems = [];
+    const SVGNS = "http://www.w3.org/2000/svg";
+
+    // Space the stories evenly around the ring, each slot close to its pin
+    function assignSlots(list) {
+      const n = list.length, step = 360 / n;
+      const order = list.map((r, i) => i).sort((a, b) => list[a].lng - list[b].lng);
+      let sx = 0, sy = 0;
+      order.forEach((i, k) => {
+        const a = (list[i].lng - step * k) * Math.PI / 180;
+        sx += Math.cos(a); sy += Math.sin(a);
+      });
+      const offset = Math.atan2(sy, sx) * 180 / Math.PI;
+      const slots = [];
+      order.forEach((i, k) => (slots[i] = ((offset + step * k + 540) % 360) - 180));
+      return slots;
+    }
+
+    function showResults(data) {
+      resultsMode = true;
+      resultsData = data;
+      clearInterval(timerId);
+      data.results.forEach(r => {
+        if (r.lat == null) { const l = findLoc(r.name); if (l) { r.lat = l.lat; r.lng = l.lng; } }
+      });
+
+      document.body.classList.add("results");
+      updateFlat();
+      summaryEl.classList.remove("hidden");
+      animateNumber($("finalScore"), 0, data.total, 1200, " <small>/ 500</small>");
+      $("rankTitle").textContent = rankFor(data.total);
+      setTimeout(() => ($("sumBar").style.width = (data.total / 500) * 100 + "%"), 60);
+
+      tabsEl.innerHTML = "";
+      data.results.forEach((r, i) => {
+        const b = document.createElement("button");
+        b.className = "tab";
+        b.style.background = rating(r.points).color;
+        b.innerHTML = `R${i + 1}<br>+${r.points}`;
+        b.title = r.name;
+        b.onclick = () => { SFX.whoosh(); focusStory(i); };
+        tabsEl.appendChild(b);
+      });
+
+      scoreEl.textContent = data.total;
+      $("scoreBar").style.width = (data.total / 500) * 100 + "%";
+      roundEl.textContent = ROUNDS;
+      updatePips(data.results, -1);
+      promptEl.textContent = "✅ Done for today! Drag the globe to spin the stories";
+
+      buildRing(data);
+    }
+
+    function buildRing(data) {
+      ringEl.querySelectorAll(".orbit").forEach(n => n.remove());
+      linesSvg.innerHTML = "";
+      ringItems.length = 0;
+      ringEl.classList.remove("hidden");
+      const slots = assignSlots(data.results);
+
+      data.results.forEach((r, i) => {
+        const rt = rating(r.points);
+        const el = document.createElement("div");
+        el.className = "orbit";
+        el.innerHTML = `
+          <div class="sHead">
+            <span class="badge" style="background:${rt.color}">${i + 1}</span>
+            <h3></h3>
+            <span class="sPts" style="color:${rt.color}">+${r.points}</span>
+          </div>
+          <div class="sMeta">${rt.emoji} ${rt.label} · ${r.km.toLocaleString()} km away</div>
+          <div class="carousel">
+            <div class="slides"></div>
+            <button class="nav prev" aria-label="Previous photo">‹</button>
+            <button class="nav next" aria-label="Next photo">›</button>
+            <div class="dots"></div>
+          </div>
+          <div class="sText">${'<p class="shimmer"></p>'.repeat(3)}</div>`;
+        el.querySelector("h3").textContent = r.name;
+        ringEl.appendChild(el);
+
+        const line = document.createElementNS(SVGNS, "line");
+        line.setAttribute("stroke", rt.color);
+        line.style.opacity = 0;
+        linesSvg.appendChild(line);
+
+        const car = makeCarousel(el.querySelector(".carousel"), i * 700);
+        car.set([], true);
+
+        const it = { i, r, el, line, car, slotLng: slots[i] };
+        ringItems.push(it);
+
+        el.addEventListener("mouseenter", () => { clearTimeout(resumeTimer); setAutoRotate(false); });
+        el.addEventListener("mouseleave", () => { resumeTimer = setTimeout(() => setAutoRotate(true), 1200); });
+
+        fetchStory(findLoc(r.name) || r).then(story => fillStory(it, story));
+      });
+
+      if (globe) {
+        const pts = [], arcs = [], labels = [];
+        data.results.forEach((r, i) => {
+          pts.push({ lat: r.lat, lng: r.lng, color: rating(r.points).color });
+          labels.push({ lat: r.lat, lng: r.lng, text: String(i + 1) });
+          if (r.guessLat != null) {
+            pts.push({ lat: r.guessLat, lng: r.guessLng, color: "#ef4444" });
+            arcs.push({ startLat: r.guessLat, startLng: r.guessLng, endLat: r.lat, endLng: r.lng });
+          }
+        });
+        globe.pointsData(pts).arcsData(arcs).labelsData(labels)
+          .ringsData(data.results.map(r => ({ lat: r.lat, lng: r.lng })));
+        focusStory(0, 1500);
+      }
+    }
+
+    function fillStory(it, story) {
+      const nodes = story.paragraphs.length
+        ? story.paragraphs.map(txt => { const p = document.createElement("p"); p.textContent = txt; return p; })
+        : [Object.assign(document.createElement("p"), { textContent: "Couldn't load information about this place right now." })];
+      const credit = document.createElement("div");
+      credit.className = "credit";
+      const parts = [];
+      if (story.fromWiki && story.paragraphs.length)
+        parts.push(`Text: <a href="${story.url}" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA 4.0)`);
+      if (story.images.length)
+        parts.push(`Photos: ${story.images.map((im, k) => `<a href="${im.page}" target="_blank" rel="noopener">${k + 1}</a>`).join(" ")}`);
+      credit.innerHTML = parts.join(" · ");
+      it.el.querySelector(".sText").replaceChildren(...nodes, credit);
+      it.car.set(story.images, false);
+    }
+
+    // Spin the ring so a story faces the viewer
+    function focusStory(i, ms = 1000) {
+      const it = ringItems.find(s => s.i === i);
+      if (!it || !globe) return;
+      ringItems.forEach(s => s.el.classList.toggle("active", s.i === i));
+      [...tabsEl.children].forEach((t, j) => t.classList.toggle("active", j === i));
+      setAutoRotate(false);
+      clearTimeout(resumeTimer);
+      resumeTimer = setTimeout(() => setAutoRotate(true), ms + 4000);
+
+      if (document.body.classList.contains("flat")) {
+        it.el.scrollIntoView({ behavior: "smooth", block: "start" });
+        const lat = isMobile() ? clamp(it.r.lat + MOBILE_PIN_OFFSET_LAT, -85, 85) : it.r.lat;
+        globe.pointOfView({ lat, lng: it.r.lng, altitude: 2.6 }, ms);
+      } else {
+        globe.pointOfView({ lat: RING_VIEW_LAT, lng: it.slotLng, altitude: RESULTS_ALTITUDE }, ms);
+      }
+    }
+
+    // ================= RING ANIMATION (every frame) =================
+    function ringLoop() {
+      positionRing();
+      requestAnimationFrame(ringLoop);
+    }
+
+    function positionRing() {
+      if (!resultsMode || !globe || !ringItems.length) return;
+      if (document.body.classList.contains("flat")) {
+        ringItems.forEach(it => { it.el.style.transform = ""; it.el.style.opacity = ""; it.line.style.opacity = 0; });
+        return;
+      }
+
+      const W = wrap.clientWidth;
+      const cam = globe.camera().position;
+      const camLen = Math.hypot(cam.x, cam.y, cam.z);
+
+      ringItems.forEach(it => {
+        const p = globe.getCoords(RING_LAT, it.slotLng, RING_ALT);
+        const d = (p.x * cam.x + p.y * cam.y + p.z * cam.z) / (Math.hypot(p.x, p.y, p.z) * camLen);
+        const c = globe.getScreenCoords(RING_LAT, it.slotLng, RING_ALT);
+
+        const thetaDeg = Math.sign(c.x - W / 2) * Math.acos(clamp(d, -1, 1)) * 180 / Math.PI;
+        const scale = 0.7 + 0.3 * Math.max(0, d);
+        const opacity = clamp((d + 0.05) / 0.35, 0, 1);
+
+        it.el.style.transform =
+          `translate(${c.x}px, ${c.y}px) translate(-50%, -50%) rotateY(${CURVE * thetaDeg}deg) scale(${scale})`;
+        it.el.style.opacity = opacity;
+        it.el.style.zIndex = String(Math.round(100 + d * 100));
+        it.el.style.pointerEvents = opacity > 0.5 ? "auto" : "none";
+
+        const pin = globe.getCoords(it.r.lat, it.r.lng, 0);
+        const pinFacing = pin.x * cam.x + pin.y * cam.y + pin.z * cam.z > pin.x * pin.x + pin.y * pin.y + pin.z * pin.z;
+        const pc = globe.getScreenCoords(it.r.lat, it.r.lng, 0.02);
+        it.line.setAttribute("x1", c.x); it.line.setAttribute("y1", c.y);
+        it.line.setAttribute("x2", pc.x); it.line.setAttribute("y2", pc.y);
+        it.line.style.opacity = pinFacing ? opacity * 0.9 : 0;
+      });
+    }
+
+    // ================= EVENTS =================
+    nextBtn.addEventListener("click", nextRound);
+    document.addEventListener("keydown", e => {
+      if (resultsMode) {
+        const n = ringItems.length;
+        if (!n) return;
+        const cur = Math.max(0, ringItems.findIndex(s => s.el.classList.contains("active")));
+        if (e.key === "ArrowRight") { SFX.whoosh(); focusStory((cur + 1) % n); }
+        if (e.key === "ArrowLeft") { SFX.whoosh(); focusStory((cur - 1 + n) % n); }
+        return;
+      }
+      if ((e.key === "Enter" || e.key === " ") && !nextBtn.disabled) {
+        e.preventDefault();
+        nextRound();
+      }
+    });
+
+    $("copyBtn").addEventListener("click", async () => {
+      const text = buildShareText(resultsData || { total, results });
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const ta = document.createElement("textarea");
+        ta.value = text; document.body.appendChild(ta);
+        ta.select(); document.execCommand("copy"); ta.remove();
+      }
+      SFX.copy();
+      const btn = $("copyBtn");
+      btn.textContent = "✅ Copied!";
+      setTimeout(() => (btn.textContent = "📋 Copy Results"), 2000);
+    });
+
+    // ================= INIT =================
+    initGlobe().then(ok => {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) { showResults(JSON.parse(saved)); return; }
+      if (ok) startRound();
+    });
+  </script>
+</body>
+</html>
