@@ -46,12 +46,12 @@
     #prompt { text-align: center; padding: 10px; font-size: 1.2rem; background: var(--panel2); font-weight: 600; }
     #prompt.birthday {
       width: min(640px, calc(100% - 28px)); margin: 12px auto; padding: 14px 20px;
-      border: 1px solid rgba(255,255,255,.28); border-radius: 16px;
-      background: linear-gradient(115deg, #6d28d9, #db2777 58%, #f59e0b);
-      box-shadow: 0 10px 32px rgba(219,39,119,.3); color: #fff;
+      border: 1px solid rgba(148,163,184,.3); border-radius: 16px;
+      background: linear-gradient(115deg, rgba(18,26,51,.98), rgba(30,41,59,.96));
+      box-shadow: 0 8px 24px rgba(0,0,0,.28); color: #f8fafc;
     }
     #prompt.birthday .birthday-title { font-size: clamp(1.2rem, 3vw, 1.65rem); font-weight: 900; line-height: 1.2; }
-    #prompt.birthday .birthday-subtitle { margin-top: 4px; font-size: .95rem; font-weight: 650; color: #fff7ed; }
+    #prompt.birthday .birthday-subtitle { margin-top: 4px; font-size: .95rem; font-weight: 650; color: #cbd5e1; }
 
     /* ---------- Globe ---------- */
     #globeWrap { position: relative; flex: 1; overflow: hidden; }
@@ -1034,7 +1034,7 @@
       roundEl.textContent = ROUNDS;
       updatePips(data.results, -1);
       promptEl.classList.add("birthday");
-      promptEl.innerHTML = '<div class="birthday-title">🎉 Happy birthday Christian!</div><div class="birthday-subtitle">Love your brothers, Sebastian &amp; Sri</div>';
+      promptEl.innerHTML = '<div class="birthday-title">🎉 Happy birthday Christian!</div><div class="birthday-subtitle">Love, Sebastian &amp; Sri</div>';
 
       buildRing(data);
     }
